@@ -108,37 +108,55 @@ docker run -e OPENAI_API_KEY="$OPENAI_API_KEY" -p 3000:3000 ticket-ai-backend:de
 
 ## Repository structure
 
-├── README.md                # Project overview (this file)
-├── design.md                # Detailed design & prompt templates
-├── data/
-│   ├── raw/                 # Original downloaded Kaggle dataset
-│   └── processed/           # Chunked, cleaned tickets and embeddings metadata
-├── scripts/
-│   └── index_dataset.js     # Ingestion, chunking and embedding pipeline (CLI)
-├── backend/
-│   ├── package.json
-│   ├── src/
-│   │   ├── server.js        # Express API server
-│   │   ├── faiss_service.js # FAISS index wrapper and search logic
-│   │   └── indexer.js       # Indexer (batch job to build FAISS + metadata)
-│   └── Dockerfile           # Container image for backend
-├── frontend/
-│   ├── package.json
-│   └── src/                 # React/Next.js UI components and pages
-├── tools/
-│   ├── generate_predictions.py  # Call API for test queries and save predictions
-│   └── evaluate.py              # Compute P@k, MRR, calibration, produce report
-├── infra/
-│   ├── azure/               # ARM/Bicep/Terraform templates and deployment scripts
-│   └── docker/              # docker-compose for local dev
-└── tests/
-  ├── unit/
-  └── integration/
+A compact, GitHub-friendly overview of the repository. Use this layout as the canonical structure when you create files.
+
+```
+HCL/
+├─ README.md            # Project overview (this file)
+├─ design.md            # Detailed design & prompt templates
+├─ data/
+│  ├─ raw/              # Original Kaggle dataset (do not commit large files)
+│  └─ processed/        # Cleaned chunks, metadata and index manifest
+├─ scripts/
+│  └─ index_dataset.js  # Ingestion, chunking and batch embedding CLI
+├─ backend/
+│  ├─ package.json
+│  ├─ Dockerfile
+│  └─ src/
+│     ├─ server.js
+│     ├─ faiss_service.js
+│     └─ indexer.js
+├─ frontend/
+│  ├─ package.json
+│  └─ src/              # React/Next.js UI
+├─ tools/
+│  ├─ generate_predictions.py
+│  └─ evaluate.py       # Evaluation harness and reporting
+├─ infra/
+│  ├─ azure/            # IaC templates (ARM/Bicep/Terraform)
+│  └─ docker/           # docker-compose for local dev
+└─ tests/
+   ├─ unit/
+   └─ integration/
 ```
 
-Notes:
-- Keep sensitive credentials out of the repo (use `.env` locally and Azure Key Vault in production).
-- Store index snapshots under `data/processed/` but exclude large binary blobs from Git (use Blob Storage for backups).
-- Use `backend/src/faiss_service.js` as the single point that manipulates FAISS indexes so the rest of the backend code calls a clean API.
+Folder descriptions
+
+| Path | Purpose |
+|------|---------|
+| `data/raw/` | Store original datasets (keep off Git; use external storage for large files) |
+| `data/processed/` | Cleaned and chunked tickets, index manifests and small snapshots |
+| `scripts/` | One-off or CLI scripts (indexing pipeline, data prep) |
+| `backend/` | API server, FAISS wrapper and indexer; build Docker image here |
+| `frontend/` | User-facing web app (simple UI to submit tickets and view evidence) |
+| `tools/` | Evaluation tooling: generate predictions and compute metrics |
+| `infra/` | Infrastructure-as-code and local compose files |
+| `tests/` | Unit and integration tests |
+
+Practical notes
+
+- Keep secrets out of Git: use a local `.env` for development and Azure Key Vault in production.
+- Exclude large binaries (FAISS indexes) from Git; keep small index manifests under `data/processed/` and push full snapshots to Azure Blob Storage.
+- Centralize all FAISS reads/writes in `backend/src/faiss_service.js` so other backend modules call a simple interface.
 
 
