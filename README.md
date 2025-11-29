@@ -10,6 +10,12 @@ Build a Generative-AI assistant that analyzes incoming telecom support tickets a
 - Web UI to accept ticket descriptions and display top-3 solutions with provenance
 - Deployment-ready architecture for Azure with secure key management
 
+## Tech stack (current)
+- Frontend / Demo UI: Streamlit (Python) for rapid prototyping and demos
+- Backend: Python services (FAISS for vector search, OpenAI Python client for embeddings/LLM)
+- Optional: FastAPI for a production backend if you split UI and heavy workloads
+- Storage: Azure Blob Storage for index snapshots; Azure Cosmos DB / PostgreSQL for metadata
+
 ## High-level Architecture
 1. Data ingestion & preprocessing (chunking, PII redaction, dedup)
 2. Embedding & vector store (OpenAI embeddings -> FAISS)
@@ -133,17 +139,39 @@ Use this file to prototype ingestion, chunking and indexing flows. To load it in
 - Monitoring: Azure Application Insights
 
 ## Quick Local Dev Steps (example)
-1. Set env vars: `OPENAI_API_KEY`, DB connection, `AZURE_*` if using Azure.
-2. Index a small sample:
+1. Create and activate a Python virtual environment and set env vars (example):
+
 ```bash
-node scripts/index_dataset.js --input data/kaggle_sample.csv --batch 128
+python -m venv .venv
+source .venv/bin/activate
+export OPENAI_API_KEY="$OPENAI_API_KEY"
+# optional: export DB connection and AZURE_* vars
 ```
-3. Run backend (docker recommended):
+
+2. Install dependencies:
+
 ```bash
-docker build -t ticket-ai-backend:dev .
-docker run -e OPENAI_API_KEY="$OPENAI_API_KEY" -p 3000:3000 ticket-ai-backend:dev
+pip install -r requirements.txt
 ```
-4. Run frontend and test queries.
+
+3. Index a small sample (example script provided under `scripts/`):
+
+```bash
+python scripts/index_dataset.py --input data/sample_tickets.json --batch 128
+```
+
+4. Run the Streamlit demo UI locally:
+
+```bash
+streamlit run app/streamlit_app.py
+```
+
+5. (Optional) Run inside Docker for parity with production:
+
+```bash
+docker build -t ticket-ai-streamlit:dev .
+docker run -e OPENAI_API_KEY="$OPENAI_API_KEY" -p 8501:8501 ticket-ai-streamlit:dev
+```
 
 ## Evaluation & CI
 - Automate `tools/generate_predictions.py` to call `/api/query` for a fixed test set.
@@ -157,10 +185,10 @@ docker run -e OPENAI_API_KEY="$OPENAI_API_KEY" -p 3000:3000 ticket-ai-backend:de
 4. Optionally implement a local cross-encoder reranker (sentence-transformers) for better ranking.
 
 ## References & Artifacts to include in repo
-- `scripts/index_dataset.js` — ingestion + chunking + embedding
-- `backend/` — API server, FAISS search service
-- `frontend/` — simple React/Next.js UI
-- `tools/generate_predictions.py` and `tools/evaluate.py` — evaluation harness
+- `scripts/index_dataset.py` — ingestion + chunking + embedding (Python)
+- `backend/` — Python backend helpers (FAISS service, LLM wrappers)
+- `app/` — Streamlit demo UI (`app/streamlit_app.py`)
+- `tools/generate_predictions.py` and `tools/evaluate.py` — evaluation harness (Python)
 - `design.md` — detailed design and prompt templates
 
 
