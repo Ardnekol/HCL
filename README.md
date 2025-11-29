@@ -34,7 +34,7 @@ This system helps telecom support teams by:
          ▼
 ┌─────────────────┐
 │  LLM Generator  │
-│ (OpenAI/Groq)   │
+│  (Groq/OpenAI)  │
 └────────┬────────┘
          │
          ▼
@@ -57,22 +57,25 @@ This system helps telecom support teams by:
    - Supports index persistence and loading
 
 3. **Solution Generator** (`solution_generator.py`)
-   - Supports both OpenAI GPT and Groq LLM models
+   - Supports both Groq LLM (default) and OpenAI GPT models
+   - Groq API key is hardcoded for convenience (no setup required)
    - Generates ranked solutions with suitability percentages
    - Provides reasoning for each solution
-   - Groq offers faster inference, OpenAI offers higher quality
+   - Groq offers faster inference (500+ tokens/sec), OpenAI offers higher quality
 
-4. **Streamlit App** (`app.py`)
+4. **Streamlit App** (`main.py`)
    - User-friendly web interface
    - Ticket input and solution display
    - Similar tickets reference view
+   - Provider selection (Groq/OpenAI) in sidebar
 
 ## 📋 Prerequisites
 
 - Python 3.8+
-- API key for LLM provider:
-  - **Groq API key** (recommended for speed) - Get one at https://console.groq.com
-  - **OpenAI API key** (for higher quality) - Get one at https://platform.openai.com/api-keys
+- **Groq API key is pre-configured** (hardcoded in code - works out of the box!)
+- Or your own API key for:
+  - **Groq** (recommended, fast & free) - Get one at https://console.groq.com
+  - **OpenAI** (for higher quality) - Get one at https://platform.openai.com/api-keys
 - 2GB+ RAM (for embedding model and FAISS index)
 
 ## 🚀 Setup Instructions
@@ -80,7 +83,8 @@ This system helps telecom support teams by:
 ### 1. Clone/Download the Repository
 
 ```bash
-cd final_hack
+git clone https://github.com/Ardnekol/Team_Sangareddy.git
+cd Team_Sangareddy
 ```
 
 ### 2. Install Dependencies
@@ -91,46 +95,43 @@ pip install -r requirements.txt
 
 **Note:** The first run will download the sentence transformer model (~80MB), which may take a few minutes.
 
-### 3. Set API Key
+### 3. API Key Configuration
 
-You can use either **Groq** (faster, free tier available) or **OpenAI** (higher quality).
+**✅ Groq (Default - No Setup Required!)**
+The Groq API key is hardcoded in the code, so Groq works out of the box!
 
-**Option A: Environment Variable**
+**Optional: Use Your Own API Key**
 ```bash
-# For Groq (recommended)
+# For Groq (overrides hardcoded key)
 export GROQ_API_KEY="your-groq-api-key-here"
 
-# OR for OpenAI
+# For OpenAI
 export OPENAI_API_KEY="your-openai-api-key-here"
 ```
 
-**Option B: Enter in Streamlit UI**
-- Select your provider (Groq or OpenAI) from the dropdown
-- Enter your API key in the sidebar
+### 4. Run the Application
 
-### 4. Initialize the System
+```bash
+streamlit run main.py
+```
 
-The first time you run the app, it will:
+The app will open in your default browser at `http://localhost:8501`
+
+### 5. Initialize the System
+
+On first run, the system will automatically:
 1. Load the ticket data from `telecom_tickets_10000_12cats.json`
 2. Generate embeddings for all tickets
 3. Build the FAISS index
 4. Save the index for future use
 
-This process takes approximately 20-30 minutes for 10,000 tickets.
-
-### 5. Run the Application
-
-```bash
-streamlit run app.py
-```
-
-The app will open in your default browser at `http://localhost:8501`
+This process takes approximately 5-10 minutes for 10,000 tickets. Subsequent runs are instant as the index is cached.
 
 ## 💻 Usage
 
-1. **Initialize System**: Click "🔄 Initialize System" in the sidebar (first time only)
-2. **Select Provider**: Choose Groq or OpenAI from the dropdown
-3. **Enter API Key**: Input your API key in the sidebar
+1. **Run App**: `streamlit run main.py`
+2. **Wait for Initialization**: System auto-initializes on first run (index is cached after)
+3. **Select Provider**: Choose Groq (default) or OpenAI from the sidebar
 4. **Enter Ticket**: Type or paste the customer issue description
 5. **Analyze**: Click "🔍 Analyze Ticket"
 6. **Review Results**: 
@@ -169,19 +170,19 @@ Each ticket contains:
 
 1. **Create a new Replit project**
    - Choose Python template
-   - Upload all project files
+   - Import from GitHub: `https://github.com/Ardnekol/Team_Sangareddy`
 
 2. **Install dependencies**
    - Replit will auto-install from `requirements.txt`
    - Or run: `pip install -r requirements.txt`
 
-3. **Set environment variables**
-   - Go to Secrets tab
-   - Add `OPENAI_API_KEY` with your API key
+3. **Set environment variables (Optional)**
+   - Groq works out of the box (API key is hardcoded)
+   - For OpenAI, go to Secrets tab and add `OPENAI_API_KEY`
 
 4. **Run the app**
    ```bash
-   streamlit run app.py --server.port 8501
+   streamlit run main.py --server.port 8501
    ```
 
 5. **Make it public**
@@ -191,7 +192,7 @@ Each ticket contains:
 
 1. Push code to GitHub
 2. Connect repository to [Streamlit Cloud](https://streamlit.io/cloud)
-3. Set `OPENAI_API_KEY` in secrets
+3. Optionally set `OPENAI_API_KEY` in secrets (Groq works by default)
 4. Deploy!
 
 ### Alternative: Deploy on AWS/Azure/GCP
@@ -217,7 +218,7 @@ Popular alternatives:
 
 ### Changing the LLM Model
 
-Edit `app.py` or `solution_generator.py`:
+Edit `main.py` or `solution_generator.py`:
 ```python
 # For Groq (default: llama-3.3-70b-versatile)
 generator = SolutionGenerator(provider="groq", model="llama-3.3-70b-versatile")
@@ -227,10 +228,9 @@ generator = SolutionGenerator(provider="openai", model="gpt-4")
 ```
 
 **Available Groq Models:**
-- `llama-3.3-70b-versatile` (default, best quality - updated from deprecated llama-3.1-70b-versatile)
+- `llama-3.3-70b-versatile` (default, best quality)
 - `llama-3.1-8b-instant` (faster, good quality)
 - `mixtral-8x7b-32768` (long context)
-- `gemma2-9b-it` (alternative option)
 
 **Note:** `llama-3.1-70b-versatile` has been decommissioned by Groq. The system now uses `llama-3.3-70b-versatile` by default.
 
@@ -241,7 +241,7 @@ generator = SolutionGenerator(provider="openai", model="gpt-4")
 
 ### Adjusting Similarity Search
 
-Edit `app.py`:
+Edit `main.py`:
 ```python
 similar_tickets = vector_store.search(ticket_description, k=10)  # Get more results
 ```
@@ -347,7 +347,7 @@ chmod +x fix_import_error.sh
 
 ## 🔮 Future Enhancements
 
-- [ ] Support for multiple LLM providers (Anthropic, Cohere, etc.)
+- [ ] Support for more LLM providers (Gemini, Anthropic, Cohere)
 - [ ] Fine-tuned embedding model on telecom domain data
 - [ ] Multi-language support
 - [ ] Solution confidence scoring
@@ -372,13 +372,14 @@ Built as part of GenAI Evaluation Project.
 ## 📞 Support
 
 For issues or questions, please check:
+- Groq API documentation: https://console.groq.com/docs
 - OpenAI API documentation: https://platform.openai.com/docs
 - Streamlit documentation: https://docs.streamlit.io
 - FAISS documentation: https://github.com/facebookresearch/faiss
 
 ---
 
-**Note**: This system requires an API key (Groq or OpenAI) for solution generation. 
-- **Groq**: Offers free tier with generous limits, very fast inference
-- **OpenAI**: Pay-per-use, monitor usage to avoid unexpected costs
+**Note**: This system uses Groq by default with a pre-configured API key (works out of the box!).
+- **Groq**: Pre-configured, free tier with generous limits, very fast inference (500+ tokens/sec)
+- **OpenAI**: Pay-per-use, requires your own API key
 
